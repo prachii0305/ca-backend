@@ -76,11 +76,5 @@ app.use('/api/dashboard', require('./routes/dashboard'));
 // Serve static files (like uploaded images) from 'uploads/' folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// For Vercel deployment, export the app (no app.listen here)
-if (require.main === module) {
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-} else {
-  // Export for Vercel
-  module.exports = app;
-}
+// Export the app for Vercel
+module.exports = app;
