@@ -38,12 +38,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-<<<<<<< HEAD
 // Require TeamMember model
 const TeamMember = require('./models/TeamMember');
 
-=======
->>>>>>> 8e55e13acec3e5051c00c2198f3e3fabc8b7373d
 // Route for uploading images (team member images)
 app.post('/api/team/upload', upload.single('image'), (req, res) => {
   const { name, position, bio } = req.body;
@@ -81,9 +78,6 @@ if (require.main === module) {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 } else {
-  module.exports = app;  // Export app for Vercel
+  // Export for Vercel
+  module.exports = app;
 }
-<<<<<<< HEAD
-=======
-
->>>>>>> 8e55e13acec3e5051c00c2198f3e3fabc8b7373d
