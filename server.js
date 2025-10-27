@@ -14,7 +14,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://ca-frontend-p1b2rttb1-prachi-gandhis-projects.vercel.app'],
+  origin: ['http://localhost:3000', 'https://ca-frontend-fk69co33w-prachi-gandhis-projects.vercel.app'],
   credentials: true
 }));
 app.use(express.json());
