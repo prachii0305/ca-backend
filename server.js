@@ -47,3 +47,7 @@ if (require.main === module) {
   // Export for Vercel
   module.exports = app;
 }
+app.get("/", (req, res) => {
+  res.send("Server is running ✅");
+});
+
