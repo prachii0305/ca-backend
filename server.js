@@ -70,6 +70,7 @@ app.use('/api/dashboard', require('./routes/dashboard'));
 // Serve static files (like uploaded images) from 'uploads/' folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+<<<<<<< HEAD
 // For Vercel deployment, export the app (no app.listen here)
 if (require.main === module) {
   const PORT = process.env.PORT || 5000;
@@ -87,5 +88,11 @@ if (require.main === module) {
 =======
   module.exports = app;  // Export app for Vercel
 }
+=======
+
+  // Export for Vercel
+  module.exports = app;
+
+>>>>>>> 6ca9a44 (12)
 
 >>>>>>> 8e55e13 (add)
