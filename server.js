@@ -15,6 +15,9 @@ const app = express();
 // MongoDB connection setup for serverless
 const MONGODB_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/ca-website';
 
+console.log('MONGO_URI available:', !!process.env.MONGO_URI);
+console.log('Using MongoDB URI:', MONGODB_URI.replace(/\/\/.*@/, '//***:***@')); // Log without credentials
+
 if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable');
 }
@@ -32,21 +35,29 @@ if (!cached) {
 
 async function dbConnect() {
   if (cached.conn) {
+    console.log('Using cached MongoDB connection');
     return cached.conn;
   }
 
   if (!cached.promise) {
+    console.log('Creating new MongoDB connection...');
     const opts = {
       bufferCommands: false,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
     };
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log('MongoDB connected successfully');
       return mongoose;
     });
   }
 
   try {
     cached.conn = await cached.promise;
+    console.log('MongoDB connection established');
   } catch (e) {
+    console.error('MongoDB connection failed:', e.message);
     cached.promise = null;
     throw e;
   }
@@ -69,11 +80,13 @@ require('./config/passport')(passport);
 // Connect to DB middleware - only for API routes
 const connectDB = async (req, res, next) => {
   try {
+    console.log(`Connecting to DB for ${req.method} ${req.path}`);
     await dbConnect();
+    console.log(`DB connected for ${req.method} ${req.path}`);
     next();
   } catch (err) {
     console.error('DB connection error:', err);
-    res.status(500).json({ error: 'Database connection failed' });
+    res.status(500).json({ error: 'Database connection failed', details: err.message });
   }
 };
 
