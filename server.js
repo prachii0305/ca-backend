@@ -63,8 +63,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
 
-// Connect to DB middleware
-app.use(async (req, res, next) => {
+// Passport config
+require('./config/passport')(passport);
+
+// Connect to DB middleware - only for API routes
+const connectDB = async (req, res, next) => {
   try {
     await dbConnect();
     next();
@@ -72,10 +75,7 @@ app.use(async (req, res, next) => {
     console.error('DB connection error:', err);
     res.status(500).json({ error: 'Database connection failed' });
   }
-});
-
-// Passport config
-require('./config/passport')(passport);
+};
 
 // Add health check route
 app.get('/api/health', (req, res) => {
@@ -115,16 +115,16 @@ app.post('/api/team/upload', upload.single('image'), (req, res) => {
     .catch(err => res.status(500).send('Error saving team member: ' + err));
 });
 
-// API Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/timesheets', require('./routes/timesheets'));
-app.use('/api/tasks', require('./routes/tasks'));
-app.use('/api/content', require('./routes/content'));
-app.use('/api/blogs', require('./routes/blogs'));
-app.use('/api/team', require('./routes/team'));
-app.use('/api/applications', require('./routes/applications'));
-app.use('/api/queries', require('./routes/queries'));
-app.use('/api/dashboard', require('./routes/dashboard'));
+// API Routes - apply DB connection middleware only to API routes
+app.use('/api/auth', connectDB, require('./routes/auth'));
+app.use('/api/timesheets', connectDB, require('./routes/timesheets'));
+app.use('/api/tasks', connectDB, require('./routes/tasks'));
+app.use('/api/content', connectDB, require('./routes/content'));
+app.use('/api/blogs', connectDB, require('./routes/blogs'));
+app.use('/api/team', connectDB, require('./routes/team'));
+app.use('/api/applications', connectDB, require('./routes/applications'));
+app.use('/api/queries', connectDB, require('./routes/queries'));
+app.use('/api/dashboard', connectDB, require('./routes/dashboard'));
 
 // Serve static files (like uploaded images) from 'uploads/' folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
