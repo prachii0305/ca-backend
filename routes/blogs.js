@@ -2,19 +2,10 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport');
 const multer = require('multer');
-const path = require('path');
 const Blog = require('../models/Blog');
 
-// Configure multer for PDF uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configure multer for PDF uploads (memory storage for Vercel compatibility)
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -73,9 +64,10 @@ router.post('/', passport.authenticate('jwt', { session: false }), isAdmin, uplo
     };
 
     if (req.file) {
-      // PDF upload
-      blogData.file = req.file.path;
+      // PDF upload - store as base64
+      blogData.fileData = req.file.buffer.toString('base64');
       blogData.fileName = req.file.originalname;
+      blogData.fileType = req.file.mimetype;
     } else {
       // Text content
       blogData.content = content;
@@ -110,10 +102,18 @@ router.put('/:id', passport.authenticate('jwt', { session: false }), isAdmin, as
 });
 
 // Download blog file
-router.get('/file/:filename', async (req, res) => {
+router.get('/file/:id', async (req, res) => {
   try {
-    const filePath = path.join(__dirname, '..', 'uploads', req.params.filename);
-    res.download(filePath);
+    const blog = await Blog.findById(req.params.id);
+    if (!blog || !blog.fileData) {
+      return res.status(404).json({ msg: 'Blog file not found' });
+    }
+
+    // Convert base64 back to buffer and send as download
+    const buffer = Buffer.from(blog.fileData, 'base64');
+    res.setHeader('Content-Type', blog.fileType || 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${blog.fileName}"`);
+    res.send(buffer);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
@@ -121,10 +121,17 @@ router.get('/file/:filename', async (req, res) => {
 });
 
 // View blog file (for iframe display)
-router.get('/view/:filename', async (req, res) => {
+router.get('/view/:id', async (req, res) => {
   try {
-    const filePath = path.join(__dirname, '..', 'uploads', req.params.filename);
-    res.sendFile(filePath);
+    const blog = await Blog.findById(req.params.id);
+    if (!blog || !blog.fileData) {
+      return res.status(404).json({ msg: 'Blog file not found' });
+    }
+
+    // Convert base64 back to buffer and send for viewing
+    const buffer = Buffer.from(blog.fileData, 'base64');
+    res.setHeader('Content-Type', blog.fileType || 'application/pdf');
+    res.send(buffer);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');

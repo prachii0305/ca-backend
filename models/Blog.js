@@ -7,14 +7,17 @@ const BlogSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: function() { return !this.file; } // Required if no file
+    required: function() { return !this.fileData; } // Required if no file
   },
-  file: {
-    type: String, // Path to uploaded PDF file
+  fileData: {
+    type: String, // Base64 encoded PDF data
     required: function() { return !this.content; } // Required if no content
   },
   fileName: {
     type: String, // Original filename
+  },
+  fileType: {
+    type: String, // MIME type (e.g., 'application/pdf')
   },
   author: {
     type: mongoose.Schema.Types.ObjectId,
