@@ -13,7 +13,7 @@ dotenv.config();
 const app = express();
 
 // MongoDB connection setup for serverless
-const MONGODB_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/ca-website';
+const MONGODB_URI = process.env.MONGO_URI || 'mongodb+srv://prachig0305_db_user:x2FADtxJtZgpWd2X@cluster0.qnv5gv0.mongodb.net/ca-website';
 
 console.log('MONGO_URI available:', !!process.env.MONGO_URI);
 console.log('Using MongoDB URI:', MONGODB_URI.replace(/\/\/.*@/, '//***:***@')); // Log without credentials
