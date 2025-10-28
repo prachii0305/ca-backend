@@ -12,6 +12,48 @@ dotenv.config();
 // Initialize express app
 const app = express();
 
+// MongoDB connection setup for serverless
+const MONGODB_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/ca-website';
+
+if (!MONGODB_URI) {
+  throw new Error('Please define the MONGODB_URI environment variable');
+}
+
+/**
+ * Global is used here to maintain a cached connection across hot reloads
+ * in development. This prevents connections growing exponentially
+ * during API Route usage in serverless.
+ */
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+async function dbConnect() {
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+    };
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      return mongoose;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+
+  return cached.conn;
+}
+
 // Middleware
 app.use(cors({
   origin: ['http://localhost:3000', 'https://ca-frontend-fk69co33w-prachi-gandhis-projects.vercel.app', 'https://ca-frontend-8hptv4zsh-prachi-gandhis-projects.vercel.app'],
@@ -21,13 +63,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
 
+// Connect to DB middleware
+app.use(async (req, res, next) => {
+  try {
+    await dbConnect();
+    next();
+  } catch (err) {
+    console.error('DB connection error:', err);
+    res.status(500).json({ error: 'Database connection failed' });
+  }
+});
+
 // Passport config
 require('./config/passport')(passport);
-
-// MongoDB connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/ca-website', { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.log('MongoDB connection error:', err));
 
 // Add health check route
 app.get('/api/health', (req, res) => {
