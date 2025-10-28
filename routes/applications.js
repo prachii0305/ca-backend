@@ -3,6 +3,7 @@ const router = express.Router();
 const passport = require('passport');
 const Application = require('../models/Application');
 const multer = require('multer');
+const { put, head } = require('@vercel/blob');
 
 // Middleware to check admin role
 function isAdmin(req, res, next) {
@@ -36,13 +37,25 @@ router.post('/', upload.single('resume'), async (req, res) => {
   console.log('File:', req.file ? req.file.originalname : 'No file');
 
   const { name, email, phone, message } = req.body;
+  let resumeUrl = null;
+
   try {
+    // Upload file to Vercel Blob if present
+    if (req.file) {
+      const blob = await put(`resumes/${Date.now()}-${req.file.originalname}`, req.file.buffer, {
+        access: 'public',
+        contentType: req.file.mimetype
+      });
+      resumeUrl = blob.url;
+      console.log('Resume uploaded to Vercel Blob:', resumeUrl);
+    }
+
     const application = new Application({
       name,
       email,
       phone,
       message,
-      resume: req.file ? req.file.originalname : null
+      resume: resumeUrl || null
     });
     await application.save();
     console.log('Application saved successfully');
@@ -83,7 +96,7 @@ router.delete('/:id', passport.authenticate('jwt', { session: false }), isAdmin,
 // Serve resume file (admin only)
 router.get('/resume/:filename', passport.authenticate('jwt', { session: false }), isAdmin, (req, res) => {
   // For Vercel, we can't serve files from disk, so return a message
-  res.json({ msg: 'Resume download not available on Vercel deployment' });
+  res.json({ msg: `Resume file: ${req.params.filename}. Download not available on Vercel deployment. File was uploaded but stored only as filename.` });
 });
 
 module.exports = router;
