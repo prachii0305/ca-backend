@@ -3,7 +3,6 @@ const router = express.Router();
 const passport = require('passport');
 const Application = require('../models/Application');
 const multer = require('multer');
-const { put, head } = require('@vercel/blob');
 
 // Middleware to check admin role
 function isAdmin(req, res, next) {
@@ -37,17 +36,17 @@ router.post('/', upload.single('resume'), async (req, res) => {
   console.log('File:', req.file ? req.file.originalname : 'No file');
 
   const { name, email, phone, message } = req.body;
-  let resumeUrl = null;
+  let resumeData = null;
+  let resumeName = null;
+  let resumeType = null;
 
   try {
-    // Upload file to Vercel Blob if present
+    // Store file as base64 if present
     if (req.file) {
-      const blob = await put(`resumes/${Date.now()}-${req.file.originalname}`, req.file.buffer, {
-        access: 'public',
-        contentType: req.file.mimetype
-      });
-      resumeUrl = blob.url;
-      console.log('Resume uploaded to Vercel Blob:', resumeUrl);
+      resumeData = req.file.buffer.toString('base64');
+      resumeName = req.file.originalname;
+      resumeType = req.file.mimetype;
+      console.log('Resume stored as base64, size:', resumeData.length);
     }
 
     const application = new Application({
@@ -55,13 +54,16 @@ router.post('/', upload.single('resume'), async (req, res) => {
       email,
       phone,
       message,
-      resume: resumeUrl || null
+      resume: resumeData,
+      resumeName,
+      resumeType
     });
     await application.save();
     console.log('Application saved successfully');
     res.json({ msg: 'Application submitted successfully' });
   } catch (err) {
     console.error('Application submission error:', err);
+    console.error('Error details:', err.stack);
     if (err instanceof multer.MulterError) {
       if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(400).json({ msg: 'File too large. Maximum size is 10MB.' });
@@ -94,9 +96,24 @@ router.delete('/:id', passport.authenticate('jwt', { session: false }), isAdmin,
 });
 
 // Serve resume file (admin only)
-router.get('/resume/:filename', passport.authenticate('jwt', { session: false }), isAdmin, (req, res) => {
-  // For Vercel, we can't serve files from disk, so return a message
-  res.json({ msg: `Resume file: ${req.params.filename}. Download not available on Vercel deployment. File was uploaded but stored only as filename.` });
+router.get('/resume/:id', passport.authenticate('jwt', { session: false }), isAdmin, async (req, res) => {
+  try {
+    const application = await Application.findById(req.params.id);
+    if (!application || !application.resume) {
+      return res.status(404).json({ msg: 'Resume not found' });
+    }
+
+    // Convert base64 back to buffer
+    const fileBuffer = Buffer.from(application.resume, 'base64');
+
+    // Set appropriate headers
+    res.setHeader('Content-Type', application.resumeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${application.resumeName}"`);
+    res.send(fileBuffer);
+  } catch (err) {
+    console.error('Resume download error:', err);
+    res.status(500).json({ msg: 'Server error' });
+  }
 });
 
 module.exports = router;

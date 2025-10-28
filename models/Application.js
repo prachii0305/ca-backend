@@ -13,7 +13,13 @@ const ApplicationSchema = new mongoose.Schema({
     type: String
   },
   resume: {
-    type: String // path to uploaded CV file
+    type: String // base64 encoded file data
+  },
+  resumeName: {
+    type: String // original filename
+  },
+  resumeType: {
+    type: String // MIME type
   },
   message: {
     type: String
