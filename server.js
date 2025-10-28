@@ -71,7 +71,7 @@ async function dbConnect() {
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://ca-frontend-fk69co33w-prachi-gandhis-projects.vercel.app', 'https://ca-frontend-8hptv4zsh-prachi-gandhis-projects.vercel.app', 'https://ca-frontend-ilsl9vkd3-prachi-gandhis-projects.vercel.app'],
+  origin: ['http://localhost:3000', 'https://ca-frontend-prachi-gandhis-projects.vercel.app'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
