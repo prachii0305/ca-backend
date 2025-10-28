@@ -50,6 +50,7 @@ router.get('/', async (req, res) => {
 router.post('/', passport.authenticate('jwt', { session: false }), isAdmin, upload.single('image'), async (req, res) => {
   const { name, position, bio } = req.body;
   try {
+    console.log('Creating team member:', { name, position, bio, hasImage: !!req.file });
     const teamMember = new TeamMember({
       name,
       position,
@@ -58,9 +59,11 @@ router.post('/', passport.authenticate('jwt', { session: false }), isAdmin, uplo
       addedBy: req.user.id
     });
     await teamMember.save();
+    console.log('Team member created successfully:', teamMember._id);
     res.json(teamMember);
   } catch (err) {
-    console.error(err.message);
+    console.error('Error creating team member:', err.message);
+    console.error('Full error:', err);
     res.status(500).send('Server error');
   }
 });
