@@ -11,5 +11,8 @@
       "src": "/(.*)",
       "dest": "server.js"
     }
-  ]
+  ],
+  "env": {
+    "MONGO_URI": "mongodb+srv://prachig0305_db_user:x2FADtxJtZgpWd2X@cluster0.qnv5gv0.mongodb.net/ca-website"
+  }
 }

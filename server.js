@@ -129,5 +129,15 @@ app.use('/api/dashboard', connectDB, require('./routes/dashboard'));
 // Serve static files (like uploaded images) from 'uploads/' folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Handle favicon.ico and other common static files
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+app.get('/robots.txt', (req, res) => res.status(204).end());
+app.get('/manifest.json', (req, res) => res.status(204).end());
+
+// Catch-all handler for undefined routes
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
 // Export the app for Vercel
 module.exports = app;
