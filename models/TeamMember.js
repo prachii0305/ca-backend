@@ -13,7 +13,10 @@ const TeamMemberSchema = new mongoose.Schema({
     type: String
   },
   image: {
-    type: String // path to image
+    type: String // filename
+  },
+  imageData: {
+    type: String // base64 encoded image data
   },
   addedBy: {
     type: mongoose.Schema.Types.ObjectId,

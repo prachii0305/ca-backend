@@ -3,7 +3,6 @@ const router = express.Router();
 const passport = require('passport');
 const TeamMember = require('../models/TeamMember');
 const multer = require('multer');
-const path = require('path');
 
 // Middleware to check admin role
 function isAdmin(req, res, next) {
@@ -13,15 +12,8 @@ function isAdmin(req, res, next) {
   return res.status(403).json({ msg: 'Access denied' });
 }
 
-// Multer config for image upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../uploads'));
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
+// Multer config for image upload (memory storage for Vercel compatibility)
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // Get all team members
@@ -30,10 +22,15 @@ router.get('/', async (req, res) => {
     console.log('Fetching team members...');
     const team = await TeamMember.find().sort({ order: 1, addedAt: 1 });
     console.log('Team members found:', team.length);
-    // Modify image path to be relative to /uploads for frontend
+    // Modify image path to be data URL for frontend (base64 images)
     const modifiedTeam = team.map(member => {
       member = member.toObject();
-      if (member.image) {
+      if (member.imageData) {
+        // Create data URL from base64 data
+        const mimeType = 'image/jpeg'; // Default, could be enhanced to detect actual type
+        member.image = `data:${mimeType};base64,${member.imageData}`;
+      } else if (member.image) {
+        // Fallback for old format
         member.image = `https://ca-backend-prachi-gandhis-projects.vercel.app/uploads/${member.image}`;
       }
       return member;
@@ -51,13 +48,25 @@ router.post('/', passport.authenticate('jwt', { session: false }), isAdmin, uplo
   const { name, position, bio } = req.body;
   try {
     console.log('Creating team member:', { name, position, bio, hasImage: !!req.file });
+
+    let imageData = null;
+    let imageName = null;
+
+    if (req.file) {
+      // Convert buffer to base64 for storage
+      imageData = req.file.buffer.toString('base64');
+      imageName = Date.now() + '_' + req.file.originalname;
+    }
+
     const teamMember = new TeamMember({
       name,
       position,
       bio,
-      image: req.file ? req.file.filename : null,
+      image: imageName,
+      imageData: imageData, // Store base64 data
       addedBy: req.user.id
     });
+
     await teamMember.save();
     console.log('Team member created successfully:', teamMember._id);
     res.json(teamMember);
