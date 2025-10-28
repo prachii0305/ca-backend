@@ -32,9 +32,9 @@ router.get('/', async (req, res) => {
     console.log('Team members found:', team.length);
     // Modify image path to be relative to /uploads for frontend
     const modifiedTeam = team.map(member => {
+      member = member.toObject();
       if (member.image) {
-        member = member.toObject();
-        member.image = `https://ca-backend-prachi-gandhis-projects.vercel.app/uploads/${member.image}`;
+        member.image = `https://ca-backend-nine.vercel.app/uploads/${member.image}`;
       }
       return member;
     });
