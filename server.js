@@ -214,7 +214,7 @@ app.get('/robots.txt', (req, res) => res.status(204).end());
 app.get('/manifest.json', (req, res) => res.status(204).end());
 
 // Catch-all handler for undefined routes
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
