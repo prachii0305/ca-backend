@@ -95,7 +95,7 @@ router.delete('/:id', passport.authenticate('jwt', { session: false }), isAdmin,
   }
 });
 
-// Serve resume file (admin only)
+// Get resume data (admin only) - returns base64 data for frontend to handle download
 router.get('/resume/:id', passport.authenticate('jwt', { session: false }), isAdmin, async (req, res) => {
   try {
     const application = await Application.findById(req.params.id);
@@ -103,13 +103,11 @@ router.get('/resume/:id', passport.authenticate('jwt', { session: false }), isAd
       return res.status(404).json({ msg: 'Resume not found' });
     }
 
-    // Convert base64 back to buffer
-    const fileBuffer = Buffer.from(application.resume, 'base64');
-
-    // Set appropriate headers
-    res.setHeader('Content-Type', application.resumeType);
-    res.setHeader('Content-Disposition', `attachment; filename="${application.resumeName}"`);
-    res.send(fileBuffer);
+    res.json({
+      data: application.resume,
+      filename: application.resumeName,
+      type: application.resumeType
+    });
   } catch (err) {
     console.error('Resume download error:', err);
     res.status(500).json({ msg: 'Server error' });
