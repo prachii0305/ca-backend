@@ -29,6 +29,11 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/ca-website'
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.log('MongoDB connection error:', err));
 
+// Add health check route
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Server is running' });
+});
+
 // Multer setup for image upload
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {

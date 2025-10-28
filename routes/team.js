@@ -27,7 +27,9 @@ const upload = multer({ storage });
 // Get all team members
 router.get('/', async (req, res) => {
   try {
+    console.log('Fetching team members...');
     const team = await TeamMember.find().sort({ order: 1, addedAt: 1 });
+    console.log('Team members found:', team.length);
     // Modify image path to be relative to /uploads for frontend
     const modifiedTeam = team.map(member => {
       if (member.image) {
@@ -38,7 +40,8 @@ router.get('/', async (req, res) => {
     });
     res.json(modifiedTeam);
   } catch (err) {
-    console.error(err.message);
+    console.error('Error in GET /api/team:', err.message);
+    console.error('Full error:', err);
     res.status(500).send('Server error');
   }
 });
