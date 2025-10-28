@@ -3,12 +3,20 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Task = require('../models/Task');
 const User = require('../models/User');
-const { ensureAuthenticated, ensureAdmin } = require('../config/auth');
+const passport = require('passport');
+
+// Middleware to check admin role
+function isAdmin(req, res, next) {
+  if (req.user.role === 'admin') {
+    return next();
+  }
+  return res.status(403).json({ msg: 'Access denied' });
+}
 
 // Get tasks for the current user
-router.get('/', ensureAuthenticated, async (req, res) => {
+router.get('/', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
-    const tasks = await Task.find({ assignedTo: req.user._id })
+    const tasks = await Task.find({ assignedTo: req.user.id })
       .populate('assignedBy', 'name email')
       .sort({ createdAt: -1 });
     res.json(tasks);
@@ -19,7 +27,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
 });
 
 // Get all tasks (admin only)
-router.get('/admin', ensureAuthenticated, ensureAdmin, async (req, res) => {
+router.get('/admin', passport.authenticate('jwt', { session: false }), isAdmin, async (req, res) => {
   try {
     const tasks = await Task.find()
       .populate('assignedTo', 'name email')
@@ -33,13 +41,13 @@ router.get('/admin', ensureAuthenticated, ensureAdmin, async (req, res) => {
 });
 
 // Get tasks for a specific user
-router.get('/user/:userId', ensureAuthenticated, async (req, res) => {
+router.get('/user/:userId', passport.authenticate('jwt', { session: false }), async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.userId)) {
     return res.status(400).json({ message: 'Invalid user ID' });
   }
   try {
     // Allow users to see their own tasks, admins can see anyone's tasks
-    if (req.user._id.toString() !== req.params.userId && req.user.role !== 'admin') {
+    if (req.user.id.toString() !== req.params.userId && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -54,7 +62,7 @@ router.get('/user/:userId', ensureAuthenticated, async (req, res) => {
 });
 
 // Create a new task (admin only)
-router.post('/', ensureAuthenticated, ensureAdmin, async (req, res) => {
+router.post('/', passport.authenticate('jwt', { session: false }), isAdmin, async (req, res) => {
   try {
     const { title, description, assignedTo, priority, dueDate } = req.body;
 
@@ -68,7 +76,7 @@ router.post('/', ensureAuthenticated, ensureAdmin, async (req, res) => {
       title,
       description,
       assignedTo,
-      assignedBy: req.user._id,
+      assignedBy: req.user.id,
       priority: priority || 'medium',
       dueDate
     });
@@ -85,7 +93,7 @@ router.post('/', ensureAuthenticated, ensureAdmin, async (req, res) => {
 });
 
 // Update task status (assigned user or admin)
-router.put('/:id/status', ensureAuthenticated, async (req, res) => {
+router.put('/:id/status', passport.authenticate('jwt', { session: false }), async (req, res) => {
   try {
     const { status, progress } = req.body;
     const task = await Task.findById(req.params.id);
@@ -95,7 +103,7 @@ router.put('/:id/status', ensureAuthenticated, async (req, res) => {
     }
 
     // Check permissions: user can update their own tasks, admin can update any
-    if (task.assignedTo.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    if (task.assignedTo.toString() !== req.user.id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -118,7 +126,7 @@ router.put('/:id/status', ensureAuthenticated, async (req, res) => {
 });
 
 // Update task (admin only)
-router.put('/:id', ensureAuthenticated, ensureAdmin, async (req, res) => {
+router.put('/:id', passport.authenticate('jwt', { session: false }), isAdmin, async (req, res) => {
   try {
     const { title, description, assignedTo, priority, dueDate, status } = req.body;
 
@@ -159,7 +167,7 @@ router.put('/:id', ensureAuthenticated, ensureAdmin, async (req, res) => {
 });
 
 // Delete task (admin only)
-router.delete('/:id', ensureAuthenticated, ensureAdmin, async (req, res) => {
+router.delete('/:id', passport.authenticate('jwt', { session: false }), isAdmin, async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
     if (!task) {

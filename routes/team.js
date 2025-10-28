@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
     const modifiedTeam = team.map(member => {
       member = member.toObject();
       if (member.image) {
-        member.image = `https://ca-backend-nine.vercel.app/uploads/${member.image}`;
+        member.image = `https://ca-backend-prachi-gandhis-projects.vercel.app/uploads/${member.image}`;
       }
       return member;
     });
