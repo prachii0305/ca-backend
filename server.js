@@ -44,8 +44,11 @@ async function dbConnect() {
     const opts = {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 30000, // Increased timeout for Atlas
       socketTimeoutMS: 45000,
+      connectTimeoutMS: 30000,
+      retryWrites: true,
+      retryReads: true,
     };
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
       console.log('MongoDB connected successfully');
@@ -58,6 +61,7 @@ async function dbConnect() {
     console.log('MongoDB connection established');
   } catch (e) {
     console.error('MongoDB connection failed:', e.message);
+    console.error('Full error details:', e);
     cached.promise = null;
     throw e;
   }
