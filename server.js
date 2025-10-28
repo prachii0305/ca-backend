@@ -75,7 +75,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
 
 // Passport config
-require('./config/passport')(passport);
+try {
+  require('./config/passport')(passport);
+  console.log('Passport config loaded successfully');
+} catch (err) {
+  console.error('Error loading passport config:', err);
+  throw err;
+}
 
 // Connect to DB middleware - only for API routes
 const connectDB = async (req, res, next) => {
@@ -108,7 +114,14 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Require TeamMember model
-const TeamMember = require('./models/TeamMember');
+let TeamMember;
+try {
+  TeamMember = require('./models/TeamMember');
+  console.log('TeamMember model loaded successfully');
+} catch (err) {
+  console.error('Error loading TeamMember model:', err);
+  throw err;
+}
 
 // Route for uploading images (team member images)
 app.post('/api/team/upload', upload.single('image'), (req, res) => {
@@ -129,15 +142,68 @@ app.post('/api/team/upload', upload.single('image'), (req, res) => {
 });
 
 // API Routes - apply DB connection middleware only to API routes
-app.use('/api/auth', connectDB, require('./routes/auth'));
-app.use('/api/timesheets', connectDB, require('./routes/timesheets'));
-app.use('/api/tasks', connectDB, require('./routes/tasks'));
-app.use('/api/content', connectDB, require('./routes/content'));
-app.use('/api/blogs', connectDB, require('./routes/blogs'));
-app.use('/api/team', connectDB, require('./routes/team'));
-app.use('/api/applications', connectDB, require('./routes/applications'));
-app.use('/api/queries', connectDB, require('./routes/queries'));
-app.use('/api/dashboard', connectDB, require('./routes/dashboard'));
+try {
+  app.use('/api/auth', connectDB, require('./routes/auth'));
+  console.log('Auth routes loaded');
+} catch (err) {
+  console.error('Error loading auth routes:', err);
+}
+
+try {
+  app.use('/api/timesheets', connectDB, require('./routes/timesheets'));
+  console.log('Timesheets routes loaded');
+} catch (err) {
+  console.error('Error loading timesheets routes:', err);
+}
+
+try {
+  app.use('/api/tasks', connectDB, require('./routes/tasks'));
+  console.log('Tasks routes loaded');
+} catch (err) {
+  console.error('Error loading tasks routes:', err);
+}
+
+try {
+  app.use('/api/content', connectDB, require('./routes/content'));
+  console.log('Content routes loaded');
+} catch (err) {
+  console.error('Error loading content routes:', err);
+}
+
+try {
+  app.use('/api/blogs', connectDB, require('./routes/blogs'));
+  console.log('Blogs routes loaded');
+} catch (err) {
+  console.error('Error loading blogs routes:', err);
+}
+
+try {
+  app.use('/api/team', connectDB, require('./routes/team'));
+  console.log('Team routes loaded');
+} catch (err) {
+  console.error('Error loading team routes:', err);
+}
+
+try {
+  app.use('/api/applications', connectDB, require('./routes/applications'));
+  console.log('Applications routes loaded');
+} catch (err) {
+  console.error('Error loading applications routes:', err);
+}
+
+try {
+  app.use('/api/queries', connectDB, require('./routes/queries'));
+  console.log('Queries routes loaded');
+} catch (err) {
+  console.error('Error loading queries routes:', err);
+}
+
+try {
+  app.use('/api/dashboard', connectDB, require('./routes/dashboard'));
+  console.log('Dashboard routes loaded');
+} catch (err) {
+  console.error('Error loading dashboard routes:', err);
+}
 
 // Serve static files (like uploaded images) from 'uploads/' folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
