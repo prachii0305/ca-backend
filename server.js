@@ -214,6 +214,31 @@ try {
 // Serve static files (like uploaded images) from 'uploads/' folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// API endpoint to serve images (for Vercel compatibility)
+app.get('/api/uploads/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, 'uploads', filename);
+
+  console.log('Requested file:', filename);
+  console.log('File path:', filePath);
+
+  // Check if file exists
+  const fs = require('fs');
+  if (fs.existsSync(filePath)) {
+    console.log('File exists, sending...');
+    res.setHeader('Content-Type', 'image/jpeg'); // Set appropriate content type
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error sending file:', err);
+        res.status(500).json({ error: 'Error serving file' });
+      }
+    });
+  } else {
+    console.log('File not found');
+    res.status(404).json({ error: 'File not found' });
+  }
+});
+
 // Handle favicon.ico and other common static files
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.get('/robots.txt', (req, res) => res.status(204).end());

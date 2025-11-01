@@ -8,10 +8,22 @@
   ],
   "routes": [
     {
+      "src": "/uploads/(.*)",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      },
+      "dest": "/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "api/index.js"
     }
   ],
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30
+    }
+  },
   "env": {
     "MONGO_URI": "mongodb+srv://prachig0305_db_user:x2FADtxJtZgpWd2X@cluster0.qnv5gv0.mongodb.net/ca-website"
   }

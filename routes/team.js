@@ -40,8 +40,8 @@ router.get('/', async (req, res) => {
         const mimeType = 'image/jpeg'; // Default, could be enhanced to detect actual type
         member.image = `data:${mimeType};base64,${member.imageData}`;
       } else if (member.image) {
-        // Fallback for old format
-        member.image = `https://ca-backend-prachi-gandhis-projects.vercel.app/uploads/${member.image}`;
+        // Fallback for old format - use API endpoint for Vercel compatibility
+        member.image = `https://ca-backend-prachi-gandhis-projects.vercel.app/api/uploads/${member.image}`;
       }
       return member;
     });

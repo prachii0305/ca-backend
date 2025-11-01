@@ -70,4 +70,19 @@ router.put('/:id', passport.authenticate('jwt', { session: false }), isAdmin, as
   }
 });
 
+// Delete timesheet (admin only)
+router.delete('/:id', passport.authenticate('jwt', { session: false }), isAdmin, async (req, res) => {
+  try {
+    const timesheet = await Timesheet.findById(req.params.id);
+    if (!timesheet) {
+      return res.status(404).json({ msg: 'Timesheet not found' });
+    }
+    await Timesheet.findByIdAndDelete(req.params.id);
+    res.json({ msg: 'Timesheet deleted' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
 module.exports = router;

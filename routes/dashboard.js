@@ -29,19 +29,32 @@ router.get('/user', passport.authenticate('jwt', { session: false }), async (req
 // Admin dashboard
 router.get('/admin', passport.authenticate('jwt', { session: false }), isAdmin, async (req, res) => {
   try {
-    const pendingTimesheets = await Timesheet.find({ status: 'pending' }).populate('user', 'name email');
-    const allTimesheets = await Timesheet.find().populate('user', 'name email').sort({ date: -1 });
-    const totalTimesheets = await Timesheet.countDocuments();
-    const approvedTimesheets = await Timesheet.countDocuments({ status: 'approved' });
-    const pendingTimesheetsCount = await Timesheet.countDocuments({ status: 'pending' });
-    const blogs = await Blog.countDocuments();
-    const teamMembers = await TeamMember.countDocuments();
-    const applications = await Application.countDocuments();
-    const queries = await Query.countDocuments();
-    res.json({
-      pendingTimesheets,
-      allTimesheets,
-      stats: {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Get paginated data
+    const [pendingTimesheets, allTimesheets, stats] = await Promise.all([
+      Timesheet.find({ status: 'pending' })
+        .populate('user', 'name email')
+        .sort({ date: -1 })
+        .limit(limit)
+        .skip(skip),
+      Timesheet.find()
+        .populate('user', 'name email')
+        .sort({ date: -1 })
+        .limit(limit)
+        .skip(skip),
+      // Use aggregation for stats to improve performance
+      Promise.all([
+        Timesheet.countDocuments(),
+        Timesheet.countDocuments({ status: 'approved' }),
+        Timesheet.countDocuments({ status: 'pending' }),
+        Blog.countDocuments(),
+        TeamMember.countDocuments(),
+        Application.countDocuments(),
+        Query.countDocuments()
+      ]).then(([totalTimesheets, approvedTimesheets, pendingTimesheetsCount, blogs, teamMembers, applications, queries]) => ({
         totalTimesheets,
         approvedTimesheets,
         pendingTimesheetsCount,
@@ -49,6 +62,17 @@ router.get('/admin', passport.authenticate('jwt', { session: false }), isAdmin, 
         teamMembers,
         applications,
         queries
+      }))
+    ]);
+
+    res.json({
+      pendingTimesheets,
+      allTimesheets,
+      stats,
+      pagination: {
+        page,
+        limit,
+        total: stats.pendingTimesheetsCount // This is approximate for pagination info
       }
     });
   } catch (err) {
