@@ -16,17 +16,27 @@ function isAdmin(req, res, next) {
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Get all team members
+// Get all team members with pagination
 router.get('/', async (req, res) => {
   try {
     console.log('Fetching team members...');
-    const team = await TeamMember.find().sort({ order: 1, addedAt: 1 });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50; // Default limit to prevent large payloads
+    const skip = (page - 1) * limit;
+
+    const team = await TeamMember.find()
+      .sort({ order: 1, addedAt: 1 })
+      .skip(skip)
+      .limit(limit);
+
     console.log('Team members found:', team.length);
+
     // Modify image path to be data URL for frontend (base64 images)
+    // Only include essential image data for performance
     const modifiedTeam = team.map(member => {
       member = member.toObject();
       if (member.imageData) {
-        // Create data URL from base64 data
+        // Create data URL from base64 data - consider serving as separate endpoint for large images
         const mimeType = 'image/jpeg'; // Default, could be enhanced to detect actual type
         member.image = `data:${mimeType};base64,${member.imageData}`;
       } else if (member.image) {
@@ -35,7 +45,19 @@ router.get('/', async (req, res) => {
       }
       return member;
     });
-    res.json(modifiedTeam);
+
+    // Include pagination info
+    const total = await TeamMember.countDocuments();
+    res.json({
+      team: modifiedTeam,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalMembers: total,
+        hasNext: page * limit < total,
+        hasPrev: page > 1
+      }
+    });
   } catch (err) {
     console.error('Error in GET /api/team:', err.message);
     console.error('Full error:', err);

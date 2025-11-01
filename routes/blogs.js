@@ -29,11 +29,31 @@ function isAdmin(req, res, next) {
   return res.status(403).json({ msg: 'Access denied' });
 }
 
-// Get all blogs
+// Get all blogs with pagination
 router.get('/', async (req, res) => {
   try {
-    const blogs = await Blog.find().populate('author', 'name').sort({ createdAt: -1 });
-    res.json(blogs);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20; // Reasonable limit for blogs
+    const skip = (page - 1) * limit;
+
+    const blogs = await Blog.find()
+      .populate('author', 'name')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Blog.countDocuments();
+
+    res.json({
+      blogs,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalBlogs: total,
+        hasNext: page * limit < total,
+        hasPrev: page > 1
+      }
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
