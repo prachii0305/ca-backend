@@ -12,7 +12,7 @@
       "headers": {
         "Cache-Control": "public, max-age=31536000, immutable"
       },
-      "dest": "/$1"
+      "dest": "/api/index.js"
     },
     {
       "src": "/(.*)",

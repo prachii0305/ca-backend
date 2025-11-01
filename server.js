@@ -226,7 +226,16 @@ app.get('/api/uploads/:filename', (req, res) => {
   const fs = require('fs');
   if (fs.existsSync(filePath)) {
     console.log('File exists, sending...');
-    res.setHeader('Content-Type', 'image/jpeg'); // Set appropriate content type
+    // Determine content type based on file extension
+    const ext = path.extname(filename).toLowerCase();
+    let contentType = 'image/jpeg'; // default
+    if (ext === '.png') contentType = 'image/png';
+    else if (ext === '.gif') contentType = 'image/gif';
+    else if (ext === '.webp') contentType = 'image/webp';
+    else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
     res.sendFile(filePath, (err) => {
       if (err) {
         console.error('Error sending file:', err);
